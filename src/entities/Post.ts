@@ -1,23 +1,53 @@
-import { PrimaryKey, Property } from "@mikro-orm/core";
-import { Entity } from "@mikro-orm/core";
+import { PrimaryKey } from "@mikro-orm/core";
+import { ObjectType, Field } from "type-graphql";
+import {
+    Entity,
+    Column,
+    PrimaryGeneratedColumn,
+    CreateDateColumn,
+    UpdateDateColumn,
+    BaseEntity,
+    ManyToOne,
+    OneToMany,
+} from "typeorm";
+import { User } from "./User";
+import { Vote } from "./Vote";
 
+@ObjectType()
 @Entity()
-export default class Post {
-	@PrimaryKey()
-	id!: number;
+export class Post extends BaseEntity {
+    @Field()
+    @PrimaryGeneratedColumn()
+    id!: number;
 
-	@Property({ type: "date" })
-	createdAt = new Date();
+    @Field(() => String)
+    @CreateDateColumn()
+    createdAt: Date;
 
-	@Property({ type: "date", onUpdate: () => new Date() })
-	updatedAt = new Date();
+    @Field(() => String)
+    @UpdateDateColumn()
+    updatedAt: Date;
 
-	@Property()
-	authorId: number;
+    @Field()
+    @Column()
+    title!: string;
 
-	@Property()
-	title: string;
+    @Field()
+    @Column()
+    content!: string;
 
-	@Property()
-	content: string;
+    @OneToMany(() => Vote, (vote) => vote.post)
+    votes: Vote[];
+
+    @Field()
+    @Column({ type: "int", default: 0 })
+    voteCount!: number;
+
+    @Field()
+    @ManyToOne(() => User, (user) => user.posts)
+    author: User;
+
+    @Field()
+    @PrimaryKey()
+    authorId: number;
 }
