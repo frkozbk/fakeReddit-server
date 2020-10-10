@@ -1,4 +1,4 @@
-import { Field } from "type-graphql";
+import { Field, ObjectType } from "type-graphql";
 import {
     BaseEntity,
     Column,
@@ -10,6 +10,7 @@ import {
 import { Post } from "./Post";
 import { User } from "./User";
 
+@ObjectType()
 @Entity()
 export class Vote extends BaseEntity {
     @Field()
@@ -22,6 +23,7 @@ export class Vote extends BaseEntity {
     @ManyToOne(() => User, (user) => user.votes)
     user: User;
 
+    @Field()
     @PrimaryColumn()
     postId: number;
 

@@ -2,7 +2,7 @@
     "name": "fakeReddit",
     "version": "1.0.0",
     "description": "",
-    "main": "index.js",
+    "main": "server.js",
     "scripts": {
         "watch": "tsc -w",
         "dev": "nodemon dist/server.js",

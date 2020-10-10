@@ -19,18 +19,23 @@ import { Vote } from "./entities/Vote";
 const main = async () => {
     await createConnection({
         type: "postgres",
-        database: "freddit",
-        username: "postgres",
-        password: "123qwe",
         logging: true,
         synchronize: true,
+        extra: {
+            ssl: true
+        },
         entities: [Post, User, Vote],
+        ...(__prod__ ? {url: process.env.DATABASE_URL} : {
+            database: "freddit",
+            username: "postgres",
+            password: "123qwe"
+        })
     });
 
     const app = express();
     app.use(
         cors({
-            origin: "http://localhost:3000",
+            origin: process.env.CLIENT_URL,
             credentials: true,
         })
     );
@@ -39,7 +44,7 @@ const main = async () => {
 
     app.use(
         session({
-            name: "qid",
+            name: process.env.SESSION_NAME,
 
             store: new RedisStore({
                 client: redisClient,
@@ -76,10 +81,9 @@ const main = async () => {
         app,
         cors: { origin: "http://localhost:3000", credentials: true },
     });
-
-    app.listen({ port: 4000 }, () => {
-        console.clear();
-        console.log(`🚀 Server ready at http://localhost:4000`);
+    const port = process.env.PORT ||process.env.port || 4000
+    app.listen({ port }, () => {
+        console.log(`🚀 Server ready at ${port}`);
     });
 };
 

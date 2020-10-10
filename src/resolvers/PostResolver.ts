@@ -1,3 +1,4 @@
+import { Vote } from "../entities/Vote";
 import { MyContext } from "src/types";
 import {
     Resolver,
@@ -9,6 +10,7 @@ import {
     Ctx,
     Authorized,
 } from "type-graphql";
+import { getConnection } from "typeorm";
 import { Post } from "../entities/Post";
 import { FieldError } from "./UserResolver";
 
@@ -22,9 +24,27 @@ class PostInput {
 
 @Resolver()
 export class PostResolver {
+    @Query(() => [Vote])
+    async votes(): Promise<Vote[]> {
+        return Vote.find();
+    }
+
     @Query(() => [Post])
-    async posts(): Promise<Post[]> {
-        return Post.find();
+    async posts(@Ctx() { req }: MyContext): Promise<Post[]> {
+        const { userId } = req.session;
+        const posts = await getConnection().query(`
+            select
+                p.*,${userId ? `v."value" as "voteStatus"` : ""}
+                from post p
+                ${
+                    userId
+                        ? `LEFT JOIN vote v ON v."postId"=p."id" AND v."userId"=${userId}`
+                        : ""
+                }
+                ORDER BY p."createdAt" DESC
+        `);
+        console.log(posts);
+        return posts;
     }
 
     @Query(() => Post, { nullable: true })
@@ -71,7 +91,38 @@ export class PostResolver {
         }
         return post;
     }
-
+    @Authorized()
+    @Mutation(() => Boolean)
+    async vote(
+        @Arg("postId") postId: number,
+        @Arg("voteStatus") voteStatus: 1 | -1,
+        @Ctx() { req }: MyContext
+    ): Promise<Boolean> {
+        try {
+            const userId = req.session.userId;
+            const vote = await Vote.findOne({ userId, postId });
+            const post = await Post.findOne({ id: postId });
+            if (!post) return false;
+            if (vote && vote.value) {
+                if (vote.value === voteStatus) return false;
+                vote.value = voteStatus;
+                post.voteCount += 2 * voteStatus;
+                await post.save();
+                await vote.save();
+                return true;
+            }
+            Vote.create({
+                userId: req.session.userId,
+                value: voteStatus,
+                postId,
+            }).save();
+            post.voteCount += voteStatus;
+            await post.save();
+            return true;
+        } catch (error) {
+            return false;
+        }
+    }
     @Mutation(() => Boolean)
     async deletePost(@Arg("id") id: number): Promise<boolean> {
         await Post.delete(id);

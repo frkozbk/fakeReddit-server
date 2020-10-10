@@ -50,4 +50,7 @@ export class Post extends BaseEntity {
     @Field()
     @PrimaryKey()
     authorId: number;
+
+    @Field({ nullable: true })
+    voteStatus: number;
 }
