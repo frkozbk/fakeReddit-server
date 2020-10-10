@@ -22,7 +22,7 @@ const main = async () => {
         logging: true,
         synchronize: true,
         extra: {
-            ssl: true
+            ssl:  process.env.DATABASE_URL ? true : false
         },
         entities: [Post, User, Vote],
         ...(__prod__ ? {url: process.env.DATABASE_URL} : {
